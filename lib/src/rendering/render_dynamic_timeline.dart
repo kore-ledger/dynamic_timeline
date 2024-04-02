@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 class DynamicTimelineParentData extends ContainerBoxParentData<RenderBox> {
@@ -56,7 +57,7 @@ class RenderDynamicTimeline extends RenderBox
 
   DateTime _firstDateTime;
 
-  DateTime get firstDateTime => _firstDateTime;
+  DateTime get firstDateTime => _firstDateTime.subtract(const Duration(days: 1));
 
   set firstDateTime(DateTime value) {
     if (value == _firstDateTime) return;
@@ -67,7 +68,7 @@ class RenderDynamicTimeline extends RenderBox
 
   DateTime _lastDateTime;
 
-  DateTime get lastDateTime => _lastDateTime;
+  DateTime get lastDateTime => _lastDateTime.add(const Duration(days: 2));
 
   set lastDateTime(DateTime value) {
     if (value == _lastDateTime) return;
@@ -415,17 +416,7 @@ class RenderDynamicTimeline extends RenderBox
           defaultPaint(context, offset);
 
           // paint line
-          canvas.drawLine(
-            Offset(
-              offset.dx,
-              offset.dy + maxCrossAxisIndicatorExtent,
-            ),
-            Offset(
-              offset.dx + size.width,
-              offset.dy + maxCrossAxisIndicatorExtent,
-            ),
-            linePaint,
-          );
+
 
           // paint labels
           var dateTime = firstDateTime;
@@ -435,17 +426,36 @@ class RenderDynamicTimeline extends RenderBox
             final label = labelBuilder(dateTime);
 
             if (label != null) {
-              TextPainter(
+              TextPainter textPainter = TextPainter(
                 text: TextSpan(
                   text: label,
                   style: labelTextStyle,
                 ),
                 textDirection: TextDirection.ltr,
                 ellipsis: '.',
-              )
-                // - 10 to have space between the label and the line
-                ..layout(maxWidth: size.width - 10)
-                ..paint(canvas, labelOffset);
+              );
+          canvas.drawLine(
+            Offset(
+              labelOffset.dx,
+              labelOffset.dy + 50,
+            ),
+            Offset(
+              labelOffset.dx,
+              labelOffset.dy + size.height - 12,
+            ),
+            Paint()
+                    ..color = Colors.black
+                    ..strokeWidth = 1
+                    ..style = PaintingStyle.stroke,
+          );
+
+              textPainter.layout(maxWidth: size.width - 10);
+
+              canvas.save();
+              canvas.translate(labelOffset.dx - 10,labelOffset.dy + 35);
+              canvas.rotate(-35 * 3.1415927 / 180);
+              textPainter.paint(canvas, Offset.zero); 
+              canvas.restore(); 
             }
             labelOffset =
                 Offset(labelOffset.dx + intervalExtent, labelOffset.dy);
