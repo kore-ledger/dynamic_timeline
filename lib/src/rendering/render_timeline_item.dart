@@ -1,6 +1,6 @@
-// ignore_for_file: public_member_api_docs
-
+// ignore_for_file: public_member_api_docs, lines_longer_than_80_chars
 import 'package:dynamic_timeline/dynamic_timeline.dart';
+import 'package:dynamic_timeline/src/rendering/dynamic_timeline_parent_data.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -15,9 +15,11 @@ class RenderTimelineItem extends RenderProxyBox
     required void Function(DateTime)? onEndDateTimeUpdated,
     required void Function(DateTime)? onStartDateTimeChanged,
     required void Function(DateTime)? onEndDateTimeChanged,
+    bool? isTimelineLabelItem,
   })  : _startDateTime = startDateTime,
         _endDateTime = endDateTime,
         _position = position,
+        _isTimelineLabelItem = isTimelineLabelItem ?? false,
         _onStartDateTimeUpdated = onStartDateTimeUpdated,
         _onEndDateTimeUpdated = onEndDateTimeUpdated,
         _onStartDateTimeChanged = onStartDateTimeChanged,
@@ -34,6 +36,9 @@ class RenderTimelineItem extends RenderProxyBox
     parentData!.startDateTime = _startDateTime;
     markParentNeedsLayout();
   }
+
+  final bool _isTimelineLabelItem;
+  bool get isTimelineLabelItem => _isTimelineLabelItem;
 
   DateTime _endDateTime;
 
@@ -100,23 +105,23 @@ class RenderTimelineItem extends RenderProxyBox
     _onEndDateTimeChanged = value;
   }
 
-  late final double _microsecondExtent;
+  late double _secondExtent;
 
-  late final Duration _minItemDuration;
+  late Duration _minItemDuration;
 
-  late final Axis _axis;
+  late Axis _axis;
 
-  late final bool _resizable;
+  late bool _resizable;
 
-  late final double _minItemExtent;
+  late double _minItemExtent;
 
-  late final VerticalDragGestureRecognizer _topDragGestureRecognizer;
+  late VerticalDragGestureRecognizer _topDragGestureRecognizer;
 
-  late final VerticalDragGestureRecognizer _bottomDragGestureRecognizer;
+  late VerticalDragGestureRecognizer _bottomDragGestureRecognizer;
 
-  late final HorizontalDragGestureRecognizer _leftDragGestureRecognizer;
+  late HorizontalDragGestureRecognizer _leftDragGestureRecognizer;
 
-  late final HorizontalDragGestureRecognizer _rightDragGestureRecognizer;
+  late HorizontalDragGestureRecognizer _rightDragGestureRecognizer;
 
   void _onUpdateTopOrLeft(DragUpdateDetails details) {
     var duration = Duration.zero;
@@ -129,7 +134,7 @@ class RenderTimelineItem extends RenderProxyBox
       if (details.delta.dy >= 0 ||
           globalDragPosition.dy <= globalBottomPosition - _minItemExtent) {
         duration = Duration(
-          microseconds: details.delta.dy ~/ _microsecondExtent,
+          seconds: details.delta.dy ~/ _secondExtent,
         );
       }
     } else {
@@ -137,7 +142,7 @@ class RenderTimelineItem extends RenderProxyBox
       if (details.delta.dx >= 0 ||
           globalDragPosition.dx <= globalRightPosition - _minItemExtent) {
         duration = Duration(
-          microseconds: details.delta.dx ~/ _microsecondExtent,
+          seconds: details.delta.dx ~/ _secondExtent,
         );
       }
     }
@@ -160,7 +165,7 @@ class RenderTimelineItem extends RenderProxyBox
       if (details.delta.dy <= 0 ||
           globalDragPosition.dy >= globalTopPosition + _minItemExtent) {
         duration = Duration(
-          microseconds: details.delta.dy ~/ _microsecondExtent,
+          seconds: details.delta.dy ~/ _secondExtent,
         );
       }
     } else {
@@ -168,7 +173,7 @@ class RenderTimelineItem extends RenderProxyBox
       if (details.delta.dx <= 0 ||
           globalDragPosition.dx >= globalLeftPosition + _minItemExtent) {
         duration = Duration(
-          microseconds: details.delta.dx ~/ _microsecondExtent,
+          seconds: details.delta.dx ~/ _secondExtent,
         );
       }
     }
@@ -189,6 +194,49 @@ class RenderTimelineItem extends RenderProxyBox
     onEndDateTimeChanged?.call(endDateTime);
   }
 
+  void _updateGestureRecognizers() {
+    if (_axis == Axis.vertical) {
+      _topDragGestureRecognizer = VerticalDragGestureRecognizer()
+        ..onUpdate = _onUpdateTopOrLeft
+        ..onEnd = _onEndTopOrLeft
+        ..dragStartBehavior = DragStartBehavior.down;
+
+      _bottomDragGestureRecognizer = VerticalDragGestureRecognizer()
+        ..onUpdate = _onUpdateBottomOrRight
+        ..onEnd = _onEndBottomOrLeft
+        ..dragStartBehavior = DragStartBehavior.down;
+    } else {
+      _leftDragGestureRecognizer = HorizontalDragGestureRecognizer()
+        ..onUpdate = _onUpdateTopOrLeft
+        ..onEnd = _onEndTopOrLeft
+        ..dragStartBehavior = DragStartBehavior.down;
+
+      _rightDragGestureRecognizer = HorizontalDragGestureRecognizer()
+        ..onUpdate = _onUpdateBottomOrRight
+        ..onEnd = _onEndBottomOrLeft
+        ..dragStartBehavior = DragStartBehavior.down;
+    }
+  }
+
+  void _checkGestureProps() {
+    _axis = parentData!.axis;
+
+    _secondExtent = parentData!.secondExtent;
+
+    _minItemDuration = parentData!.minItemDuration;
+
+    _minItemExtent = _minItemDuration.inSeconds * _secondExtent;
+
+    _resizable = parentData!.resizable;
+
+    assert(
+      !_resizable || endDateTime.difference(startDateTime) >= _minItemDuration,
+      'resizable widgets can not have a duration less than minItemDuration',
+    );
+
+    _updateGestureRecognizers();
+  }
+
   @override
   DynamicTimelineParentData? get parentData {
     if (super.parentData == null) return null;
@@ -206,49 +254,15 @@ class RenderTimelineItem extends RenderProxyBox
     parentData!.endDateTime = endDateTime;
     parentData!.position = position;
 
-    _microsecondExtent = parentData!.microsecondExtent;
-
-    _minItemDuration = parentData!.minItemDuration;
-
-    _minItemExtent = _minItemDuration.inMicroseconds * _microsecondExtent;
-
-    _axis = parentData!.axis;
-
-    _resizable = parentData!.resizable;
-
-    assert(
-      !_resizable || endDateTime.difference(startDateTime) >= _minItemDuration,
-      'resizable widgets can not have a duration less than minItemDuration',
-    );
-
-    if (_resizable) {
-      if (_axis == Axis.vertical) {
-        _topDragGestureRecognizer = VerticalDragGestureRecognizer()
-          ..onUpdate = _onUpdateTopOrLeft
-          ..onEnd = _onEndTopOrLeft
-          ..dragStartBehavior = DragStartBehavior.down;
-
-        _bottomDragGestureRecognizer = VerticalDragGestureRecognizer()
-          ..onUpdate = _onUpdateBottomOrRight
-          ..onEnd = _onEndBottomOrLeft
-          ..dragStartBehavior = DragStartBehavior.down;
-      } else {
-        _leftDragGestureRecognizer = HorizontalDragGestureRecognizer()
-          ..onUpdate = _onUpdateTopOrLeft
-          ..onEnd = _onEndTopOrLeft
-          ..dragStartBehavior = DragStartBehavior.down;
-
-        _rightDragGestureRecognizer = HorizontalDragGestureRecognizer()
-          ..onUpdate = _onUpdateBottomOrRight
-          ..onEnd = _onEndBottomOrLeft
-          ..dragStartBehavior = DragStartBehavior.down;
-      }
-    }
+    _checkGestureProps();
   }
 
   @override
   void handleEvent(PointerEvent event, covariant HitTestEntry entry) {
     assert(debugHandleEvent(event, entry), '');
+
+    _checkGestureProps();
+
     if (_resizable) {
       if (_axis == Axis.vertical) {
         if (event.localPosition.dy < 5) {
@@ -295,6 +309,9 @@ class RenderTimelineItem extends RenderProxyBox
 
   @override
   void performLayout() {
+    _axis = parentData!.axis;
+    _secondExtent = parentData!.secondExtent;
+    _minItemExtent = _minItemDuration.inSeconds * _secondExtent;
     child!.layout(constraints);
   }
 
