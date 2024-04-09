@@ -15,6 +15,8 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
   /// {@macro dynamic_timeline}
   DynamicTimeline({
     Key? key,
+    required this.pixels,
+    required this.lenght,
     required this.firstDateTime,
     required this.lastDateTime,
     required this.labelBuilder,
@@ -32,7 +34,7 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
     this.resizable = true,
     this.paint,
     this.textStyle,
-    required List<TimelineItem> items,
+    required List<TimelineItem> this.items,
   })  : assert(
           maxCrossAxisItemExtent != double.infinity,
           "max cross axis item extent can't be infinite. ",
@@ -44,8 +46,13 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
         ),
         super(key: key, children: items);
 
+  final double pixels;
+
+  final double lenght;
   /// The axis of the line.
   final Axis axis;
+
+  List<TimelineItem> items;
 
   /// The first date time in the timeline.
   final DateTime firstDateTime;
@@ -56,7 +63,7 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
   /// Called to build the label of each mark.
   ///
   /// Note: DateFormat can be used.
-  final String? Function(DateTime) labelBuilder;
+  final String? Function(int) labelBuilder;
 
   /// The lenght of time between each mark.
   final Duration? intervalDuration;
@@ -119,6 +126,9 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
     final defaultLabelTextStyle = Theme.of(context).textTheme.bodyText1!;
 
     return RenderDynamicTimeline(
+      pixels: pixels,
+      lenght: lenght,
+      sizeVec: items.length,
       firstDateTime: firstDateTime,
       lastDateTime: lastDateTime,
       labelBuilder: labelBuilder,
@@ -152,6 +162,9 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
     final defaultLabelTextStyle = Theme.of(context).textTheme.bodyText1!;
 
     renderObject
+    ..pixels
+      ..lenght = lenght
+      ..sizeVec = items.length
       ..firstDateTime = firstDateTime
       ..lastDateTime = lastDateTime
       ..labelBuilder = labelBuilder

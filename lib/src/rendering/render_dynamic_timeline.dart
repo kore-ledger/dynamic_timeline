@@ -26,9 +26,12 @@ class RenderDynamicTimeline extends RenderBox
         ContainerRenderObjectMixin<RenderBox, DynamicTimelineParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, DynamicTimelineParentData> {
   RenderDynamicTimeline({
+    required double pixels,
+    required double lenght,
+    required int sizeVec,
     required DateTime firstDateTime,
     required DateTime lastDateTime,
-    required String? Function(DateTime) labelBuilder,
+    required String? Function(int) labelBuilder,
     required Axis axis,
     required Duration intervalDuration,
     required double intervalExtent,
@@ -40,7 +43,10 @@ class RenderDynamicTimeline extends RenderBox
     required bool resizable,
     required Paint linePaint,
     required TextStyle labelTextStyle,
-  })  : _firstDateTime = firstDateTime,
+  })  : _pixels = pixels,
+        _lenght = lenght,
+        _sizeVec = sizeVec,
+        _firstDateTime = firstDateTime,
         _lastDateTime = lastDateTime,
         _labelBuilder = labelBuilder,
         _axis = axis,
@@ -55,9 +61,35 @@ class RenderDynamicTimeline extends RenderBox
         _linePaint = linePaint,
         _labelTextStyle = labelTextStyle;
 
+  double _pixels;
+
+  double get pixels => _pixels;
+
+  set pixels(double value) {
+    _pixels = value;
+  }
+
+
+  double _lenght;
+
+  double get lenght => _lenght;
+
+  set lenght(double value) {
+    _lenght = value;
+  }
+
+  int _sizeVec;
+
+  int get sizeVec => _sizeVec;
+
+  set sizeVec(int value) {
+    _sizeVec = value;
+  }
+
   DateTime _firstDateTime;
 
-  DateTime get firstDateTime => _firstDateTime.subtract(const Duration(days: 1));
+  DateTime get firstDateTime =>
+      _firstDateTime.subtract(const Duration(days: 1));
 
   set firstDateTime(DateTime value) {
     if (value == _firstDateTime) return;
@@ -77,11 +109,11 @@ class RenderDynamicTimeline extends RenderBox
     markNeedsLayout();
   }
 
-  String? Function(DateTime dateTime) _labelBuilder;
+  String? Function(int index) _labelBuilder;
 
-  String? Function(DateTime dateTime) get labelBuilder => _labelBuilder;
+  String? Function(int index) get labelBuilder => _labelBuilder;
 
-  set labelBuilder(String? Function(DateTime dateTime) value) {
+  set labelBuilder(String? Function(int index) value) {
     if (value == _labelBuilder) return;
 
     _labelBuilder = value;
@@ -248,11 +280,7 @@ class RenderDynamicTimeline extends RenderBox
   }
 
   double _getMainAxisExtent({required BoxConstraints constraints}) {
-    final mainAxisSize = _getMainAxisSize(constraints.biggest);
-    final attemptExtent =
-        _getExtentSecondRate() * _getTotalDuration().inSeconds;
-
-    return min(mainAxisSize, attemptExtent);
+    return max(pixels * sizeVec + 10 + 70, lenght);
   }
 
   Size _computeSize({required BoxConstraints constraints}) {
@@ -309,32 +337,27 @@ class RenderDynamicTimeline extends RenderBox
         _getMaxCrossAxisItemExtent(constraints: constraints);
 
     var child = firstChild;
-
+    var count = 0;
     // define children layout and position
     while (child != null) {
       final childParentData = child.parentData! as DynamicTimelineParentData;
 
-      late final DateTime startDateTime;
-      late final DateTime endDateTime;
+
       late final int position;
 
-      startDateTime = childParentData.startDateTime!;
-      endDateTime = childParentData.endDateTime!;
       position = childParentData.position!;
 
-      final childDuration = endDateTime.difference(startDateTime);
-
-      final childMainAxisExtent =
-          _getExtentSecondRate() * childDuration.inSeconds;
-
-      final differenceFromFirstDate = startDateTime.difference(firstDateTime);
-
-      final mainAxisPosition =
-          _getExtentSecondRate() * differenceFromFirstDate.inSeconds;
+//////// _getMainAxisExtent
+      // final childDuration = endDateTime.difference(startDateTime);
+      final childMainAxisExtent = pixels;
+      final mainAxisPosition = 10 + pixels * count;
+      count++;
 
       final crossAxisPosition = maxCrossAxisIndicatorExtent +
           crossAxisSpacing +
           (crossAxisSpacing + maxCrossAxisItemExtent) * position;
+
+///////
 
       if (axis == Axis.vertical) {
         child.layout(
@@ -391,6 +414,7 @@ class RenderDynamicTimeline extends RenderBox
           var dateTime = firstDateTime;
           var labelOffset = offset;
 
+          /*
           while (dateTime.isBefore(lastDateTime)) {
             final label = labelBuilder(dateTime);
 
@@ -410,56 +434,71 @@ class RenderDynamicTimeline extends RenderBox
             labelOffset =
                 Offset(labelOffset.dx, labelOffset.dy + intervalExtent);
             dateTime = dateTime.add(intervalDuration);
-          }
+          }*/
         } else {
           // paint children
           defaultPaint(context, offset);
 
-          // paint line
-
-
           // paint labels
-          var dateTime = firstDateTime;
-          var labelOffset = offset;
-
-          while (dateTime.isBefore(lastDateTime)) {
-            final label = labelBuilder(dateTime);
+          final labelOffset = offset;
+          var count = 0;
+          while (count <= sizeVec) {
+            final label = labelBuilder(count);
 
             if (label != null) {
-              TextPainter textPainter = TextPainter(
+              List<String> parts = label.split(' ');
+              String date = parts[0];
+              String hour = parts.sublist(1).join(' '); // El resto es la hora
+
+              // Dibujar la fecha
+              final fechaTextPainter = TextPainter(
                 text: TextSpan(
-                  text: label,
+                  text: date,
                   style: labelTextStyle,
                 ),
                 textDirection: TextDirection.ltr,
                 ellipsis: '.',
               );
-          canvas.drawLine(
-            Offset(
-              labelOffset.dx,
-              labelOffset.dy + 50,
-            ),
-            Offset(
-              labelOffset.dx,
-              labelOffset.dy + size.height - 12,
-            ),
-            Paint()
-                    ..color = Colors.black
-                    ..strokeWidth = 1
-                    ..style = PaintingStyle.stroke,
-          );
-
-              textPainter.layout(maxWidth: size.width - 10);
-
+              fechaTextPainter.layout(maxWidth: size.width - 10);
               canvas.save();
-              canvas.translate(labelOffset.dx - 10,labelOffset.dy + 35);
+              canvas.translate(10 + labelOffset.dx + count * pixels - 10, labelOffset.dy + 35);
               canvas.rotate(-35 * 3.1415927 / 180);
-              textPainter.paint(canvas, Offset.zero); 
-              canvas.restore(); 
+              fechaTextPainter.paint(canvas, Offset.zero);
+              canvas.restore();
+
+              
+              final horaTextPainter = TextPainter(
+                text: TextSpan(
+                  text: hour,
+                  style: labelTextStyle,
+                ),
+                textDirection: TextDirection.ltr,
+                ellipsis: '.',
+              );
+              horaTextPainter.layout(maxWidth: size.width - 10);
+              canvas.save();
+              canvas.translate(10 + labelOffset.dx + count * pixels + 16, labelOffset.dy + 38); // Ajustar la posición de la hora
+              canvas.rotate(-35 * 3.1415927 / 180);
+              horaTextPainter.paint(canvas, Offset.zero);
+              canvas.restore();
+
+  
+              canvas.drawLine(
+                Offset(
+                  10 + labelOffset.dx + count * pixels,
+                  labelOffset.dy + 65, // Ajustar la posición de la línea
+                ),
+                Offset(
+                  10 + labelOffset.dx + count * pixels,
+                  labelOffset.dy + size.height - 12,
+                ),
+                Paint()
+                  ..color = Colors.black
+                  ..strokeWidth = 1
+                  ..style = PaintingStyle.stroke,
+              );
             }
-            labelOffset =
-                Offset(labelOffset.dx + intervalExtent, labelOffset.dy);
-            dateTime = dateTime.add(intervalDuration);
+            count++;
           }
         }
       },
