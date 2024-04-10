@@ -16,25 +16,17 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
   DynamicTimeline({
     Key? key,
     required this.pixels,
-    required this.lenght,
+    required this.windowsLenght,
     required this.firstDateTime,
     required this.lastDateTime,
     required this.labelBuilder,
-    this.axis = Axis.vertical,
-    this.intervalDuration,
-    this.intervalExtent = 100,
+    this.axis = Axis.horizontal,
     this.crossAxisCount = 1,
     this.maxCrossAxisIndicatorExtent = 60,
     this.maxCrossAxisItemExtent,
-    this.minItemDuration,
     this.crossAxisSpacing = 20,
-    this.color = Colors.black,
-    this.strokeWidth = 2,
-    this.strokeCap = StrokeCap.round,
     this.resizable = true,
-    this.paint,
-    this.textStyle,
-    required List<TimelineItem> this.items,
+    required this.items,
   })  : assert(
           maxCrossAxisItemExtent != double.infinity,
           "max cross axis item extent can't be infinite. ",
@@ -46,12 +38,16 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
         ),
         super(key: key, children: items);
 
+  /// How long any Line is in pixels
   final double pixels;
 
-  final double lenght;
+  /// Width of actual windows
+  final double windowsLenght;
+
   /// The axis of the line.
   final Axis axis;
 
+  /// Items
   List<TimelineItem> items;
 
   /// The first date time in the timeline.
@@ -64,12 +60,6 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
   ///
   /// Note: DateFormat can be used.
   final String? Function(int) labelBuilder;
-
-  /// The lenght of time between each mark.
-  final Duration? intervalDuration;
-
-  /// The number of logical pixels between each mark.
-  final double intervalExtent;
 
   /// If true the items can be resized, dragging in the main axis extremes.
   final bool resizable;
@@ -86,63 +76,25 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
   /// It is used to calculate the cross axis extent of the timeline.
   final double? maxCrossAxisItemExtent;
 
-  /// The minimun duration that the item can be resized.
-  final Duration? minItemDuration;
-
   /// The number of logical pixels between each item along the cross axis.
   final double crossAxisSpacing;
 
-  /// The paint used to draw the line.
-  final Paint? paint;
-
-  /// The color of the line and labels.
-  ///
-  /// Used if [paint] or [textStyle] are null.
-  final Color color;
-
-  /// The stroke width of the line.
-  ///
-  /// Used if [paint] is null.
-  final double strokeWidth;
-
-  /// The stroke cap of the line
-  ///
-  /// Used if [paint] is null.
-  final StrokeCap strokeCap;
-
-  /// The text style of the labels.
-  final TextStyle? textStyle;
-
   @override
   RenderObject createRenderObject(BuildContext context) {
-    final defaultIntervalDuration =
-        lastDateTime.difference(firstDateTime) ~/ 20;
-
-    final defaultLinePaint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..strokeCap = strokeCap;
-
-    final defaultLabelTextStyle = Theme.of(context).textTheme.bodyText1!;
 
     return RenderDynamicTimeline(
       pixels: pixels,
-      lenght: lenght,
+      windowsLenght: windowsLenght,
       sizeVec: items.length,
       firstDateTime: firstDateTime,
       lastDateTime: lastDateTime,
       labelBuilder: labelBuilder,
       axis: axis,
-      intervalDuration: intervalDuration ?? defaultIntervalDuration,
-      intervalExtent: intervalExtent,
       crossAxisCount: crossAxisCount,
       maxCrossAxisIndicatorExtent: maxCrossAxisIndicatorExtent,
       maxCrossAxisItemExtent: maxCrossAxisItemExtent,
-      minItemDuration: minItemDuration ?? defaultIntervalDuration,
       crossAxisSpacing: crossAxisSpacing,
       resizable: resizable,
-      linePaint: paint ?? defaultLinePaint,
-      labelTextStyle: textStyle ?? defaultLabelTextStyle,
     );
   }
 
@@ -151,33 +103,19 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
     BuildContext context,
     covariant RenderDynamicTimeline renderObject,
   ) {
-    final defaultIntervalDuration =
-        lastDateTime.difference(firstDateTime) ~/ 20;
-
-    final defaultLinePaint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..strokeCap = strokeCap;
-
-    final defaultLabelTextStyle = Theme.of(context).textTheme.bodyText1!;
-
+    print(Theme.of(context).textTheme.bodyText1);
     renderObject
     ..pixels
-      ..lenght = lenght
+      ..windowsLenght = windowsLenght
       ..sizeVec = items.length
       ..firstDateTime = firstDateTime
       ..lastDateTime = lastDateTime
       ..labelBuilder = labelBuilder
       ..axis = axis
-      ..intervalDuration = intervalDuration ?? defaultIntervalDuration
-      ..intervalExtent = intervalExtent
       ..crossAxisCount = crossAxisCount
       ..maxCrossAxisIndicatorExtent = maxCrossAxisIndicatorExtent
       ..maxCrossAxisItemExtent = maxCrossAxisItemExtent
-      ..minItemDuration = minItemDuration ?? defaultIntervalDuration
       ..crossAxisSpacing = crossAxisSpacing
-      ..resizable = resizable
-      ..linePaint = paint ?? defaultLinePaint
-      ..labelTextStyle = textStyle ?? defaultLabelTextStyle;
+      ..resizable = resizable;
   }
 }
