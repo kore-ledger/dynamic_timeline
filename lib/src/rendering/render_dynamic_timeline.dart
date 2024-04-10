@@ -27,39 +27,29 @@ class RenderDynamicTimeline extends RenderBox
         RenderBoxContainerDefaultsMixin<RenderBox, DynamicTimelineParentData> {
   RenderDynamicTimeline({
     required double pixels,
-    required double lenght,
+    required double windowsLenght,
     required int sizeVec,
     required DateTime firstDateTime,
     required DateTime lastDateTime,
     required String? Function(int) labelBuilder,
     required Axis axis,
-    required Duration intervalDuration,
-    required double intervalExtent,
     required int crossAxisCount,
     required double maxCrossAxisIndicatorExtent,
     required double? maxCrossAxisItemExtent,
-    required Duration minItemDuration,
     required double crossAxisSpacing,
     required bool resizable,
-    required Paint linePaint,
-    required TextStyle labelTextStyle,
   })  : _pixels = pixels,
-        _lenght = lenght,
+        _windowsLenght = windowsLenght,
         _sizeVec = sizeVec,
         _firstDateTime = firstDateTime,
         _lastDateTime = lastDateTime,
         _labelBuilder = labelBuilder,
         _axis = axis,
-        _intervalDuration = intervalDuration,
-        _intervalExtent = intervalExtent,
         _crossAxisCount = crossAxisCount,
         _maxCrossAxisIndicatorExtent = maxCrossAxisIndicatorExtent,
         _maxCrossAxisItemExtent = maxCrossAxisItemExtent,
-        _minItemDuration = minItemDuration,
         _crossAxixSpacing = crossAxisSpacing,
-        _resizable = resizable,
-        _linePaint = linePaint,
-        _labelTextStyle = labelTextStyle;
+        _resizable = resizable;
 
   double _pixels;
 
@@ -70,12 +60,12 @@ class RenderDynamicTimeline extends RenderBox
   }
 
 
-  double _lenght;
+  double _windowsLenght;
 
-  double get lenght => _lenght;
+  double get windowsLenght => _windowsLenght;
 
-  set lenght(double value) {
-    _lenght = value;
+  set windowsLenght(double value) {
+    _windowsLenght = value;
   }
 
   int _sizeVec;
@@ -120,16 +110,6 @@ class RenderDynamicTimeline extends RenderBox
     markNeedsLayout();
   }
 
-  TextStyle _labelTextStyle;
-
-  TextStyle get labelTextStyle => _labelTextStyle;
-
-  set labelTextStyle(TextStyle value) {
-    if (value == _labelTextStyle) return;
-
-    _labelTextStyle = value;
-    markNeedsLayout();
-  }
 
   Axis _axis;
 
@@ -139,28 +119,6 @@ class RenderDynamicTimeline extends RenderBox
     if (value == _axis) return;
 
     _axis = value;
-    markNeedsLayout();
-  }
-
-  Duration _intervalDuration;
-
-  Duration get intervalDuration => _intervalDuration;
-
-  set intervalDuration(Duration value) {
-    if (value == _intervalDuration) return;
-
-    _intervalDuration = value;
-    markNeedsLayout();
-  }
-
-  double _intervalExtent;
-
-  double get intervalExtent => _intervalExtent;
-
-  set intervalExtent(double value) {
-    if (value == _intervalExtent) return;
-
-    _intervalExtent = value;
     markNeedsLayout();
   }
 
@@ -197,16 +155,6 @@ class RenderDynamicTimeline extends RenderBox
     markNeedsLayout();
   }
 
-  Duration _minItemDuration;
-
-  Duration get minItemDuration => _minItemDuration;
-
-  set minItemDuration(Duration value) {
-    if (value == _minItemDuration) return;
-
-    _minItemDuration = value;
-  }
-
   double _crossAxixSpacing;
 
   double get crossAxisSpacing => _crossAxixSpacing;
@@ -226,21 +174,6 @@ class RenderDynamicTimeline extends RenderBox
     if (value == _resizable) return;
 
     _resizable = value;
-  }
-
-  Paint _linePaint;
-
-  Paint get linePaint => _linePaint;
-
-  set linePaint(Paint value) {
-    if (value == _linePaint) return;
-
-    _linePaint = value;
-    markNeedsPaint();
-  }
-
-  double _getExtentSecondRate() {
-    return intervalExtent / intervalDuration.inSeconds;
   }
 
   Duration _getTotalDuration() {
@@ -280,7 +213,7 @@ class RenderDynamicTimeline extends RenderBox
   }
 
   double _getMainAxisExtent({required BoxConstraints constraints}) {
-    return max(pixels * sizeVec + 10 + 70, lenght);
+    return max(pixels * sizeVec + 10 + 70, windowsLenght);
   }
 
   Size _computeSize({required BoxConstraints constraints}) {
@@ -312,8 +245,8 @@ class RenderDynamicTimeline extends RenderBox
   void setupParentData(covariant RenderObject child) {
     if (child.parentData is! DynamicTimelineParentData) {
       child.parentData = DynamicTimelineParentData(
-        microsecondExtent: intervalExtent / intervalDuration.inMicroseconds,
-        minItemDuration: minItemDuration,
+        microsecondExtent: 0,
+        minItemDuration: Duration.zero,
         axis: axis,
         resizable: resizable,
       );
@@ -394,6 +327,7 @@ class RenderDynamicTimeline extends RenderBox
       (context, offset) {
         final canvas = context.canvas;
         if (axis == Axis.vertical) {
+          /*
           // paint children
           defaultPaint(context, offset);
 
@@ -414,7 +348,7 @@ class RenderDynamicTimeline extends RenderBox
           var dateTime = firstDateTime;
           var labelOffset = offset;
 
-          /*
+          
           while (dateTime.isBefore(lastDateTime)) {
             final label = labelBuilder(dateTime);
 
@@ -446,15 +380,15 @@ class RenderDynamicTimeline extends RenderBox
             final label = labelBuilder(count);
 
             if (label != null) {
-              List<String> parts = label.split(' ');
-              String date = parts[0];
-              String hour = parts.sublist(1).join(' '); // El resto es la hora
+              final parts = label.split(' ');
+              final date = parts[0];
+              final hour = parts.sublist(1).join(' ');
 
               // Dibujar la fecha
               final fechaTextPainter = TextPainter(
                 text: TextSpan(
                   text: date,
-                  style: labelTextStyle,
+                  style: const TextStyle(color: Colors.black, fontSize: 16),
                 ),
                 textDirection: TextDirection.ltr,
                 ellipsis: '.',
@@ -470,7 +404,7 @@ class RenderDynamicTimeline extends RenderBox
               final horaTextPainter = TextPainter(
                 text: TextSpan(
                   text: hour,
-                  style: labelTextStyle,
+                  style: const TextStyle(color: Colors.black, fontSize: 16),
                 ),
                 textDirection: TextDirection.ltr,
                 ellipsis: '.',
