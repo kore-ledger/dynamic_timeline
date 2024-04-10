@@ -103,7 +103,7 @@ class DynamicTimeline extends MultiChildRenderObjectWidget {
     BuildContext context,
     covariant RenderDynamicTimeline renderObject,
   ) {
-    print(Theme.of(context).textTheme.bodyText1);
+
     renderObject
     ..pixels
       ..windowsLenght = windowsLenght
